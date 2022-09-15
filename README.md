@@ -6,7 +6,7 @@ Support Materials for CYBR1100 Labs
 Download the Contact Page zip file
 - [ContactPage.zip](ContactPage.zip)
 - Move contents to **/var/www/html/** folder.
-###Q2
+### Q2
 In the terminal, type the following command:
 `/etc/init.d/apache2 start`
 
