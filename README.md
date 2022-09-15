@@ -17,9 +17,13 @@ Back in Firefox, navigate to the URL: **localhost/index.html**
 Back in the Terminal, navigate to the folder where you put the **createCybr1100.sql** file.
 
 `cd /var/www/html`
+
 `mysql < createCybr1100.sql`
+
 `mysql`
+
 `use cybr1100;`
+
 `show tables;`
 
 ### Q4
