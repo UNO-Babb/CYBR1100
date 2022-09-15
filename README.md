@@ -8,6 +8,7 @@ Download the Contact Page zip file
 - Move contents to **/var/www/html/** folder.
 ### Q2
 In the terminal, type the following command:
+
 `/etc/init.d/apache2 start`
 
 `/etc/init.d/mysql start`
