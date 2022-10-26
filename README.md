@@ -1,9 +1,29 @@
 # CYBR 1100 - Labs
 Support Materials for CYBR1100 Labs
 ---
+- [Lab 4](#Lab4)
 - [Lab 5](#Lab5)
 - [Lab 6](#Lab6)
+- [Lab 10](#Lab10)
 ---
+
+## <a id = "Lab4"></a>Lab 4 ##
+### Q1
+Metasploit has organized its DoS tools by the type of target.  You can see the list by executing the following commands in a terminal window:
+```
+# cd /usr/share/metasploit-framework/modules/auxiliary/dos
+# ls
+```
+### Q2
+```
+cd /usr/share/exploitdb
+ls -v exploits/*/dos
+less exploits/xml/dos/44375.py
+```
+
+`searchsploit rtorrent`
+
+### Q3
 
 ## <a id = "Lab5"></a>Lab 5 ##
 ### Q1
@@ -349,3 +369,146 @@ And run the retrieved file
 # ./message.bin
 ```
 What is the secret message?
+
+---
+## <a id = "Lab10"></a>Lab 10 ##
+### Setup
+The files for the assignment are in the /root/Downloads directory.  You can change directories in the terminal by typing ```cd /root/Downloads```
+The file provided by Twitter: ```russia_201901_1_tweets_csv_hasshed.zip```
+The decompressed version of the file: ```russia_201901_1_tweets_csv_hashed.csv```
+And a cleaned up version with stray line breaks and commas removed to make the file easier to process: ```datafile```
+You may examine the uncompressed files using the less command:
+```
+less russia_201901_1_tweets_csv_hashed.csv
+less datafile
+```
+Navigate using the up/down arrows and PgUp/PgDn buttons.  Press the q key to quit.
+
+### Q1
+After reviewing datafile using the less command, notice the first line of the file is a list of column names.  You can view just the first line of the file using the head command
+```
+head -1 datafile
+```
+By piping the first line to a command that translates commas to line breaks (represented by '\n'), we can look at the header of the file and see the number of column names.  This will help us filter the file by column numbers.
+```
+head -1 datafile | tr ',' '\n' | cat -n
+```
+
+### Q2
+Now that we understand which columns are what, we can ignore the first line of the file using sed 1d.  You can see how this works by piping the results to less.
+```
+sed 1d datafile | less
+```
+Notice the column names are no longer present.
+
+Most of the user names have been masked with a hash by Twitter.  The hashes can be identified by the equal sign (=) at the end of the string.  First we need to isolate the columns we are interested in.  For this example we are interested in looking at the user_display_name and user_screen_name which we can find in the answer for previous question as being columns 3 & 4.  To pull just column 3 & 4, we can indicate that fields are delimited by commas and add the following cut command in our pipe.
+```
+sed 1d datafile | cut -d',' -f 3,4 | less
+```
+Now that we have our columns that we are interested in, we can filter the names masked by the hash using the grep command.  With grep the -v parameter will remove any line that matches the pattern given in single quotes.  For this example we are removing any line that ends with an equal sign and double quote.  The dollar sign ($) indicates that the pattern needs to be at the end of the line.
+```
+sed 1d datafile | cut -d',' -f 3,4 | grep -v '="$' | less
+```
+This returns a lot of results and most look to be duplicates.  We can remove the duplicates by sorting the output and returning only unique values.
+```
+sed 1d datafile | cut -d',' -f 3,4 | grep -v '="$' | sort | uniq
+```
+or if we want to know how many rows of each string are present we can add the count flag (-c) to the uniq command.
+```
+sed 1d datafile | cut -d',' -f 3,4 | grep -v '="$' | sort | uniq -c
+```
+
+### Q4
+grep is a powerful search tool that utilizes regular expressions (regex) to define a search pattern.  In its simplest form, we can look at particular lines in the datafile that match our search string.   For example, we can use the following command to show us the message for one of the single message accounts
+```
+grep denegorov821 datafile
+```
+grep can also give quick counts.  For example, qanon shows up quite a bit in the datafile.  We can use the following command to do a case insensitive search to get a quick count of the number of messages containing the string.
+```
+grep -i -c qanon datafile
+```
+
+### Q5
+When we are analyzing the words in a text, it is usually convenient to create a standardized version that eliminates whitespace and punctuation and converts all characters to lowercase. We will use the tr command to translate and delete characters of our trimmed text, to create a standardized version.
+
+Let's take a look at the hashtags used in the messages.  Hashtags for the messages are given to us in column 27.  We can list the raw form using the following:
+```
+sed 1d datafile | cut -d',' -f 27 | less
+```
+First we delete all punctuation, using the -d option and a special pattern which matches punctuation characters.
+```
+sed 1d datafile | cut -d',' -f 27 | tr -d [:punct:] | less
+```
+The next step is to use tr to convert all characters to lowercase. Once again, use the less command to confirm that the changes have been made.
+```
+sed 1d datafile | cut -d',' -f 27 | tr -d [:punct:] | tr [:upper:] [:lower:] | less
+```
+Finally, we will use the tr command to translate each blank space into an end-of-line character (or newline, represented by \n). This gives us a file where each word is on its own line.
+```
+sed 1d datafile | cut -d',' -f 27 | tr -d [:punct:] | tr [:upper:] [:lower:] | tr ' ' '\n' | less
+```
+Now we are ready to do as we did before to sort and count word list to get a result
+```
+sed 1d datafile | cut -d',' -f 27 | tr -d [:punct:] | tr [:upper:] [:lower:] | tr ' ' '\n' | sort | uniq -c | less
+```
+What would be even more helpful would be to see the list in order of frequency.  We can also use the sort function to accomplish this by sorting the first column in numerical order.
+```
+sed 1d datafile | cut -d',' -f 27 | tr -d [:punct:] | tr [:upper:] [:lower:] | tr ' ' '\n' | sort | uniq -c | sort -k 1n
+```
+
+### Q6
+Where grep is useful for quick searches, awk gives us the ability to do searches programmatically.  
+
+Here is a simple program example that lets us look at messages that were retweeted more that 300 times.  The program evaluates the retweet_count in column 26 and when the value is over 300 it will print a message showing the count and the contents of the tweet_text from column 12.
+```
+awk -F',' '{gsub(/"/, "", $26); if (strtonum($26) > 300) print $26 " retweets of " $12}' datafile
+```
+
+### Q7
+Are there Katy Cats in Russia?
+```
+awk /katyperry/ datafile
+```
+Apparently so.  Let's look at when and where these tweets were made
+```
+awk -F',' '/katyperry/ {print $13 $11 $12}' datafile | sort -r
+```
+
+### Q8
+We will now use VADER sentiment analysis tool which you can read about here:
+
+http://comp.social.gatech.edu/papers/icwsm14.vader.hutto.pdfLinks
+
+In a nutshell, the software will analyze the words, intensity, punctuation, capitalization, emoticons and try to assign an sentiment score to a sentence.  -1 being a sentence with a lot of negative emotion and +1 representing very positive.  A score of 0 represents meh or non-emotional informational sentences.  We can use this to help quantitatively look at the twitter messages.
+
+We will use Python3 to access the natural language toolkit.  If you do not want to type the program for the VADER sentiment analysis tool, you can run the program from the a file in the Downloads directory by typing python3 nlt.py or it can be run in Python's interactive mode.
+
+To start python in interactive mode, in the terminal window type
+```
+python3
+```
+You will see the command prompt change when the interpreter starts.  Setup the environment for this question with the following commands
+```
+import nltk
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+nltk.download('vader_lexicon')
+sid = SentimentIntensityAnalyzer()
+```
+Create a subroutine where most of the work happens.  The subroutine take a sentence as an input parameter, gives it a polarity score and prints the formatted output.  Notice the second through  fourth lines are tabbed.  This is important so the interpreter knows when the subroutine ends.
+```
+def print_sentiment_scores(sentence):
+	snt = sid.polarity_scores(sentence)
+	print("{:.160}".format(sentence))
+	print("{}".format(str(snt)))
+	print
+```
+To end the subroutine, press enter an extra time to create a blank line.  Here is the main loop of the program.  The main portion of the program will read through the datafile and send column 11 to the subroutine.  Again notice the second line that is tabbed.
+```
+for line in open('datafile').readlines()[60:80]:
+	print_sentiment_scores(line.split(',')[11])
+```
+
+To quit python type
+```
+exit()
+```
